@@ -84,6 +84,38 @@ Workers existing does not guarantee useful progress, which is why the label
 probe provides an independent behavioral check. Readiness or a leader lease
 alone did not count as reconciliation recovery.
 
+## Two-replica configuration
+
+Two replicas meant **two Pods of the same CNPG operator Deployment**, both
+configured with the same namespace watch list. PostgreSQL still had three
+instances; changing the operator replica count did not add databases or divide
+the namespaces between operators.
+
+- **Leadership:** the release manifest enabled `--leader-elect`. The Pods
+  competed for the same Kubernetes Lease, `cnpg-system/db9c8771.cnpg.io`.
+  Only the elected leader ran the Cluster reconciliation workers; the other
+  Pod was a standby that could take over. Some caches could already be running
+  on the standby, but becoming leader still required controller/event-source
+  startup and synchronization.
+- **Placement and resources:** required hostname anti-affinity placed the two
+  operator Pods on different 8-vCPU workload nodes. Each operator requested
+  one CPU/256 MiB and had limits of six CPUs/eight GiB.
+- **Rolling replacement:** `RollingUpdate`, `maxSurge: 1`, `maxUnavailable: 0`.
+  A restart replaced both operator Pods, permitting three operator Pods
+  temporarily across the three workload nodes. The scope update also rolled
+  both Pods because it changed their `WATCH_NAMESPACE` environment variable.
+- **Readiness versus reconciliation:** Kubernetes could mark a replacement
+  Ready before its Cluster workers started. Consequently, it could retire the
+  old leader while the replacement was still acquiring leadership or
+  synchronizing controller sources. A rollout could have multiple handoffs
+  and separate workerless gaps, despite maintaining Ready Pods.
+
+The two-replica table therefore measures rolling replacement of the operator
+Deployment with a standby present. It does not measure deleting only the leader
+while leaving a stable standby untouched. The second replica provides a
+leadership takeover candidate; it did not guarantee uninterrupted reconciliation
+in these rolling-restart trials.
+
 ## What lengthened the restart?
 
 The dominant scalable term remains **watched namespace count**, even though almost all namespaces were empty. Database Cluster count stayed at one with three instances, images were cached, and the operator had a six-CPU/eight-GiB limit on eight-vCPU/32-GiB workload nodes.
