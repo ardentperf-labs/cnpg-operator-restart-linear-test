@@ -85,15 +85,22 @@ def fmt(value):
 
 
 def table(rows):
-    lines = ['| Namespaces | Replicas | Log gap max / total (s) | Label max completed (s) | Pending label ≥ (s) | Baseline median / p95 / max (s) | Baseline n |',
-             '|---:|---:|---:|---:|---:|---:|---:|']
+    lines = ['| Namespaces | Log gap max / total (s) | Label max completed (s) | Pending label ≥ (s) | Baseline median / p95 / max (s) | Baseline n |',
+             '|---:|---:|---:|---:|---:|---:|']
     for t in rows:
         gap = (f"≥{fmt(t['log_gap_lower_bound_seconds'])}; censored"
                if t['log_gap_lower_bound_seconds'] is not None
                else f"{fmt(t['log_gap_max_seconds'])} / {fmt(t['log_gap_total_seconds'])}")
         b = t['baseline']
-        lines.append(f"| {t['namespaces']} | {t['replicas']} | {gap} | {fmt(t['max_completed_label_seconds'])} | {fmt(t['max_pending_label_age_seconds'])} | {fmt(b['median'])} / {fmt(b['p95'])} / {fmt(b['max'])} | {b['n']} |")
+        lines.append(f"| {t['namespaces']} | {gap} | {fmt(t['max_completed_label_seconds'])} | {fmt(t['max_pending_label_age_seconds'])} | {fmt(b['median'])} / {fmt(b['p95'])} / {fmt(b['max'])} | {b['n']} |")
     return '\n'.join(lines)
+
+
+def replica_tables(rows):
+    return '\n\n'.join(
+        f"### {replicas} {'replica' if replicas == 1 else 'replicas'}\n\n"
+        + table([t for t in rows if t['replicas'] == replicas])
+        for replicas in (1, 2))
 
 
 def markdown(data):
@@ -102,10 +109,10 @@ def markdown(data):
              'Baseline uses completed pre-trigger actions that did not cross the trigger. All baseline outliers are retained. P95 uses nearest rank; per-case sample counts are small.', '',
              'A pending label age is a censored lower bound, not a completed latency. Small pending ages can be the final action cut off at the end of an otherwise successful collection window. In the failed 700/two-replica trial, the subsecond completed maximum covers only actions that finished before the stall; the pending age is the relevant bound.', '',
              '## Warm rolling restarts', '',
-             table([t for t in data['trials'] if t['scenario']=='rollout-restart']), '',
+             replica_tables([t for t in data['trials'] if t['scenario']=='rollout-restart']), '',
              '## Namespace-scope updates', '',
              'Scope updates start at the preceding count (the first is 3→100). The displayed count is the target.', '',
-             table([t for t in data['trials'] if t['scenario']=='namespace-scope-update']), '',
+             replica_tables([t for t in data['trials'] if t['scenario']=='namespace-scope-update']), '',
              'At 600/two replicas the warm restart had separate log gaps of 7.984 and 83.224 seconds. Max and total are shown separately.', '']
     return '\n'.join(lines)
 
