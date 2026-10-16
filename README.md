@@ -13,8 +13,8 @@ We measured two distinct intervals:
 - **Log-based reconciliation gap:** timestamped `Starting workers` and
   `All workers finished` messages from every operator Pod defined active
   Cluster-controller intervals. We combined intervals across replicas and
-  measured periods with no active Cluster workers. The table shows maximum
-  continuous gap and total gap separately. Pod readiness and acquiring the
+  measured periods with no active Cluster workers. The table shows the maximum
+  continuous gap; multiple-gap cases are noted separately. Pod readiness and acquiring the
   leader lease did not count as worker recovery.
 - **Label-based action latency:** repeatedly PATCH a unique inherited label on
   the PostgreSQL Cluster, then measure client-observed API acceptance to that
@@ -48,26 +48,26 @@ action latency across the trial; pending label age is shown separately.
 
 ### 1 replica
 
-| Namespaces | Log gap max / total (s) | Label max completed (s) | Pending label ≥ (s) | Baseline median / p95 / max (s) | Baseline n |
+| Namespaces | Max continuous log gap (s) | Label max completed (s) | Pending label ≥ (s) | Baseline median / p95 / max (s) | Baseline n |
 |---:|---:|---:|---:|---:|---:|
-| 100 | 13.240 / 13.240 | 13.357 | 0.000 | 0.360 / 0.526 / 0.526 | 8 |
-| 200 | 23.590 / 23.590 | 24.548 | — | 0.387 / 0.483 / 0.483 | 8 |
-| 300 | 33.483 / 33.483 | 33.824 | — | 0.475 / 0.503 / 0.503 | 7 |
-| 400 | 41.922 / 41.922 | 48.044 | 0.000 | 0.502 / 0.615 / 0.615 | 7 |
-| 500 | 59.979 / 59.979 | 61.146 | 0.000 | 0.498 / 0.834 / 0.834 | 7 |
-| 600 | 64.753 / 64.753 | 68.336 | 0.315 | 0.458 / 0.534 / 0.534 | 8 |
-| 700 | 99.454 / 99.454 | 104.027 | 0.525 | 0.461 / 0.497 / 0.497 | 7 |
+| 100 | 13.240 | 13.357 | 0.000 | 0.360 / 0.526 / 0.526 | 8 |
+| 200 | 23.590 | 24.548 | — | 0.387 / 0.483 / 0.483 | 8 |
+| 300 | 33.483 | 33.824 | — | 0.475 / 0.503 / 0.503 | 7 |
+| 400 | 41.922 | 48.044 | 0.000 | 0.502 / 0.615 / 0.615 | 7 |
+| 500 | 59.979 | 61.146 | 0.000 | 0.498 / 0.834 / 0.834 | 7 |
+| 600 | 64.753 | 68.336 | 0.315 | 0.458 / 0.534 / 0.534 | 8 |
+| 700 | 99.454 | 104.027 | 0.525 | 0.461 / 0.497 / 0.497 | 7 |
 
 ### 2 replicas
 
-| Namespaces | Log gap max / total (s) | Label max completed (s) | Pending label ≥ (s) | Baseline median / p95 / max (s) | Baseline n |
+| Namespaces | Max continuous log gap (s) | Label max completed (s) | Pending label ≥ (s) | Baseline median / p95 / max (s) | Baseline n |
 |---:|---:|---:|---:|---:|---:|
-| 100 | 11.036 / 11.036 | 14.912 | — | 0.358 / 0.604 / 0.604 | 8 |
-| 200 | 22.944 / 22.944 | 23.465 | 0.070 | 0.355 / 0.392 / 0.392 | 9 |
-| 300 | 33.884 / 33.884 | 34.715 | 0.000 | 0.487 / 0.545 / 0.545 | 7 |
-| 400 | 44.454 / 44.454 | 45.330 | 0.160 | 0.483 / 0.521 / 0.521 | 8 |
-| 500 | 54.756 / 54.756 | 57.300 | 0.420 | 0.504 / 0.716 / 0.716 | 7 |
-| 600 | 83.224 / 91.208 | 91.097 | 0.000 | 0.523 / 0.873 / 0.873 | 7 |
+| 100 | 11.036 | 14.912 | — | 0.358 / 0.604 / 0.604 | 8 |
+| 200 | 22.944 | 23.465 | 0.070 | 0.355 / 0.392 / 0.392 | 9 |
+| 300 | 33.884 | 34.715 | 0.000 | 0.487 / 0.545 / 0.545 | 7 |
+| 400 | 44.454 | 45.330 | 0.160 | 0.483 / 0.521 / 0.521 | 8 |
+| 500 | 54.756 | 57.300 | 0.420 | 0.504 / 0.716 / 0.716 | 7 |
+| 600 | 83.224 | 91.097 | 0.000 | 0.523 / 0.873 / 0.873 | 7 |
 | 700 | ≥108.084; censored | 0.825 | 119.719 | 0.595 / 0.825 / 0.825 | 6 |
 
 In the failed 700/two-replica case, the **0.825-second completed maximum covers

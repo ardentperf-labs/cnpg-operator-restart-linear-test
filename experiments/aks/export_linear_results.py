@@ -85,12 +85,12 @@ def fmt(value):
 
 
 def table(rows):
-    lines = ['| Namespaces | Log gap max / total (s) | Label max completed (s) | Pending label ≥ (s) | Baseline median / p95 / max (s) | Baseline n |',
+    lines = ['| Namespaces | Max continuous log gap (s) | Label max completed (s) | Pending label ≥ (s) | Baseline median / p95 / max (s) | Baseline n |',
              '|---:|---:|---:|---:|---:|---:|']
     for t in rows:
         gap = (f"≥{fmt(t['log_gap_lower_bound_seconds'])}; censored"
                if t['log_gap_lower_bound_seconds'] is not None
-               else f"{fmt(t['log_gap_max_seconds'])} / {fmt(t['log_gap_total_seconds'])}")
+               else fmt(t['log_gap_max_seconds']))
         b = t['baseline']
         lines.append(f"| {t['namespaces']} | {gap} | {fmt(t['max_completed_label_seconds'])} | {fmt(t['max_pending_label_age_seconds'])} | {fmt(b['median'])} / {fmt(b['p95'])} / {fmt(b['max'])} | {b['n']} |")
     return '\n'.join(lines)
@@ -113,7 +113,7 @@ def markdown(data):
              '## Namespace-scope updates', '',
              'Scope updates start at the preceding count (the first is 3→100). The displayed count is the target.', '',
              replica_tables([t for t in data['trials'] if t['scenario']=='namespace-scope-update']), '',
-             'At 600/two replicas the warm restart had separate log gaps of 7.984 and 83.224 seconds. Max and total are shown separately.', '']
+             'At 600/two replicas the warm restart had separate log gaps of 7.984 and 83.224 seconds (91.208 seconds total). The table shows the longer continuous gap. Individual intervals and totals remain in measurements.json.', '']
     return '\n'.join(lines)
 
 
