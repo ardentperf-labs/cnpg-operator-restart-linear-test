@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sql-client
+  namespace: cnpg-lab-0000
+spec:
+  restartPolicy: Never
+  containers:
+    - name: client
+      image: ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie
+      env:
+        - name: PGHOST
+          value: probe-000-rw
+        - name: PGCONNECT_TIMEOUT
+          value: "2"
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: probe-000-app
+              key: username
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: probe-000-app
+              key: password
+        - name: PGDATABASE
+          valueFrom:
+            secretKeyRef:
+              name: probe-000-app
+              key: dbname
+      command: ["sh", "-c"]
+      args:
+        - |
+          until timeout 5s psql -X -qAt -v ON_ERROR_STOP=1 -c 'CREATE TABLE IF NOT EXISTS restart_probe(id bigint GENERATED ALWAYS AS IDENTITY, seen_at timestamptz)'; do sleep 1; done
+          while true; do
+            printf 'started=%s ' "$(date -u +%s.%N)"
+            if timeout 5s psql -X -qAt -v ON_ERROR_STOP=1 -c 'INSERT INTO restart_probe(seen_at) VALUES(clock_timestamp()) RETURNING id,extract(epoch from seen_at),inet_server_addr()'; then
+              printf 'result=success finished=%s\n' "$(date -u +%s.%N)"
+            else
+              printf 'result=failure finished=%s\n' "$(date -u +%s.%N)"
+            fi
+            sleep 1
+          done
+      resources:
+        requests:
+          cpu: 5m
+          memory: 16Mi
+        limits:
+          memory: 128Mi

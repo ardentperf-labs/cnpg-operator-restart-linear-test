@@ -1,0 +1,4 @@
+# Local upstream checkouts and dependency source used for research.
+/upstream/
+/artifacts/
+__pycache__/
